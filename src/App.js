@@ -14,6 +14,8 @@ import Course from './pages/Course';
 import My from './pages/My';
 import Heart from './pages/Heart';
 import Map from './components/map';
+import Sidebar from './components/sidebar';
+import './App.css';
 
 function App() {
   return (
@@ -33,6 +35,7 @@ function App() {
         <Route path="/my" element={<My />} />
         <Route path="/heart" element={<Heart />} />
         <Route path="/map" element={<Map />} />
+        <Route path="/sidebar" element={<Sidebar />} />
       </Routes>
     </BrowserRouter>
   );

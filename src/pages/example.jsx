@@ -19,6 +19,7 @@ function Example() {
     { name: '마이', path: '/my' },
     { name: '찜', path: '/heart' },
     { name: '지도', path: '/map' },
+    { name: '사이드바', path: '/sidebar' },
 
 
   ];
