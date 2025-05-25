@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // useEffect 추가
 import PageSectionHeader from "../components/common/PageSectionHeader";
 import ListItemCard from "../components/common/ListItemCard";
 import {
@@ -8,56 +8,65 @@ import {
   FiHeart,
   FiMessageCircle,
   FiMapPin,
-} from "react-icons/fi"; 
+} from "react-icons/fi";
 
-// 더미 데이터
-const userProfile = {
-  name: "여행가김모씨",
-  email: "traveler_kim@example.com",
-  profileImageUrl: "https://via.placeholder.com/100/7B68EE/FFFFFF?Text=User",
-  bio: "사진 찍는 것을 좋아하는 여행가입니다. 주로 국내의 아름다운 풍경을 찾아 다닙니다.",
+// 더미 데이터 (컴포넌트 외부에 위치)
+const defaultUserProfile = {
+  name: "게스트",
+  email: "guest@example.com",
+  profileImageUrl: "https://via.placeholder.com/100/CCCCCC/FFFFFF?Text=Guest",
+  bio: "로그인하여 더 많은 기능을 이용해보세요.",
 };
 
-const myActivities = {
-  reviews: [
-    {
-      id: "r1",
-      title: "내 첫 제주도 우정여행 후기",
-      date: "2025-04-10",
-      thumbnailUrl:
-        "https://via.placeholder.com/150/20B2AA/FFFFFF?Text=My+Jeju",
-      category: "국내여행",
-    },
-    {
-      id: "r2",
-      title: "유럽 배낭여행 팁 대방출!",
-      date: "2025-02-15",
-      thumbnailUrl:
-        "https://via.placeholder.com/150/FFA500/FFFFFF?Text=Europe+Trip",
-      category: "해외여행",
-    },
-  ],
-  carpools: [
-    {
-      id: "c1",
-      title: "서울에서 부산 카풀 (주말)",
-      date: "2025-05-30",
-      status: "모집중",
-    },
-  ],
-  favorites: [
-    {
-      id: "f1",
-      title: "숨겨진 남해안 절경 코스",
-      type: "코스",
-      thumbnailUrl:
-        "https://via.placeholder.com/150/87CEFA/FFFFFF?Text=Favorite+Course",
-    },
-  ],
+const defaultMyActivities = {
+  reviews: [],
+  carpools: [],
+  favorites: [],
 };
 
-function MyPage() {
-  const [activeTab, setActiveTab] = useState("reviews"); // 'reviews', 'carpools', 'favorites', 'settings'
+// MyPage 함수 선언부 수정
+function MyPage({ currentUser, onLogout }) {
+  const [activeTab, setActiveTab] = useState("reviews");
+  const [displayedUserProfile, setDisplayedUserProfile] = useState(defaultUserProfile);
+  const [displayedMyActivities, setDisplayedMyActivities] = useState(defaultMyActivities);
+  const [isLoading, setIsLoading] = useState(true); // 데이터 로딩 상태
+
+  // currentUser prop이 변경될 때마다 프로필 및 활동 내역 업데이트
+  useEffect(() => {
+    if (currentUser) {
+      // 실제 앱에서는 여기서 currentUser.id를 사용하여 API 호출로
+      // 해당 사용자의 실제 프로필 및 활동 내역을 가져옵니다.
+      // 예시: fetchUserProfile(currentUser.id).then(data => setDisplayedUserProfile(data));
+      // fetchMyActivities(currentUser.id).then(data => setDisplayedMyActivities(data));
+
+      // 여기서는 더미 데이터와 currentUser 정보를 통합하는 시뮬레이션
+      setDisplayedUserProfile({
+        name: currentUser.nickname || defaultUserProfile.name,
+        email: currentUser.id || defaultUserProfile.email, // 카카오 ID 등
+        profileImageUrl: currentUser.profileImageUrl || defaultUserProfile.profileImageUrl,
+        bio: defaultUserProfile.bio, // 실제 사용자 bio가 있다면 대체
+      });
+      setDisplayedMyActivities({
+        reviews: [
+            { id: "r1", title: `${currentUser.nickname}님의 첫 후기`, date: "2025-04-10", thumbnailUrl: "https://via.placeholder.com/150/20B2AA/FFFFFF?Text=My+Jeju", category: "국내여행" },
+            { id: "r2", title: `${currentUser.nickname}님의 두번째 후기`, date: "2025-02-15", thumbnailUrl: "https://via.placeholder.com/150/FFA500/FFFFFF?Text=Europe+Trip", category: "해외여행" },
+        ],
+        carpools: [
+            { id: "c1", title: `${currentUser.nickname}님의 카풀`, date: "2025-05-30", status: "모집중" },
+        ],
+        favorites: [
+            { id: "f1", title: `${currentUser.nickname}님의 찜 코스`, type: "코스", thumbnailUrl: "https://via.placeholder.com/150/87CEFA/FFFFFF?Text=Favorite+Course" },
+        ],
+      });
+      setIsLoading(false);
+    } else {
+      // currentUser가 없으면 기본값으로 재설정 (로그아웃 시)
+      setDisplayedUserProfile(defaultUserProfile);
+      setDisplayedMyActivities(defaultMyActivities);
+      setIsLoading(false);
+    }
+  }, [currentUser]); // currentUser가 변경될 때마다 useEffect 실행
+
 
   const tabs = [
     { id: "reviews", label: "내 후기", icon: FiMessageCircle },
@@ -67,10 +76,11 @@ function MyPage() {
   ];
 
   const renderTabContent = () => {
+    // 렌더링 시에는 displayedMyActivities 사용
     switch (activeTab) {
       case "reviews":
-        return myActivities.reviews.length > 0 ? (
-          myActivities.reviews.map((item) => (
+        return displayedMyActivities.reviews.length > 0 ? (
+          displayedMyActivities.reviews.map((item) => (
             <ListItemCard
               key={item.id}
               imageUrl={item.thumbnailUrl}
@@ -88,8 +98,8 @@ function MyPage() {
           <p className="text-gray-500 p-4">작성한 후기가 없습니다.</p>
         );
       case "carpools":
-        return myActivities.carpools.length > 0 ? (
-          myActivities.carpools.map((item) => (
+        return displayedMyActivities.carpools.length > 0 ? (
+          displayedMyActivities.carpools.map((item) => (
             <ListItemCard
               key={item.id}
               title={`${item.title} (${item.status})`}
@@ -106,8 +116,8 @@ function MyPage() {
           <p className="text-gray-500 p-4">등록한 카풀이 없습니다.</p>
         );
       case "favorites":
-        return myActivities.favorites.length > 0 ? (
-          myActivities.favorites.map((item) => (
+        return displayedMyActivities.favorites.length > 0 ? (
+          displayedMyActivities.favorites.map((item) => (
             <ListItemCard
               key={item.id}
               imageUrl={item.thumbnailUrl}
@@ -139,7 +149,7 @@ function MyPage() {
                 <input
                   type="text"
                   id="nickname"
-                  defaultValue={userProfile.name}
+                  defaultValue={displayedUserProfile.name} // displayedUserProfile 사용
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -153,7 +163,7 @@ function MyPage() {
                 <textarea
                   id="bio"
                   rows="3"
-                  defaultValue={userProfile.bio}
+                  defaultValue={displayedUserProfile.bio} // displayedUserProfile 사용
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 ></textarea>
               </div>
@@ -171,6 +181,18 @@ function MyPage() {
     }
   };
 
+  // 로딩 상태 표시
+  if (isLoading) {
+    return (
+      <>
+        <PageSectionHeader title="마이페이지" />
+        <div className="flex-grow flex items-center justify-center p-4">
+          <p className="text-gray-500">내 정보를 불러오는 중입니다...</p>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageSectionHeader
@@ -178,7 +200,7 @@ function MyPage() {
         actions={
           <button
             className="flex items-center text-sm text-gray-500 hover:text-red-600 p-1.5 rounded-md hover:bg-gray-100"
-            onClick={() => alert("로그아웃")}
+            onClick={onLogout}
           >
             <FiLogOut size={18} className="mr-1" /> 로그아웃
           </button>
@@ -188,31 +210,31 @@ function MyPage() {
       {/* 프로필 섹션 */}
       <div className="p-6 bg-white m-4 rounded-lg shadow-md flex items-center space-x-4">
         <img
-          src={userProfile.profileImageUrl}
+          src={displayedUserProfile.profileImageUrl} // displayedUserProfile 사용
           alt="프로필 이미지"
           className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-2 border-gray-200"
         />
         <div className="flex-grow">
           <div className="flex justify-between items-center">
             <h2 className="text-xl md:text-2xl font-semibold text-gray-800">
-              {userProfile.name}
+              {displayedUserProfile.name} {/* displayedUserProfile 사용 */}
             </h2>
             <button className="text-blue-600 hover:text-blue-700 p-1.5 rounded-md hover:bg-blue-50">
               <FiEdit3 size={20} />
             </button>
           </div>
-          <p className="text-sm text-gray-500">{userProfile.email}</p>
+          <p className="text-sm text-gray-500">{displayedUserProfile.email}</p> {/* displayedUserProfile 사용 */}
           <p className="text-sm text-gray-600 mt-1 hidden md:block">
-            {userProfile.bio}
+            {displayedUserProfile.bio} {/* displayedUserProfile 사용 */}
           </p>
         </div>
       </div>
       <p className="text-sm text-gray-600 mt-1 px-6 block md:hidden">
-        {userProfile.bio}
+        {displayedUserProfile.bio} {/* displayedUserProfile 사용 */}
       </p>
 
       {/* 탭 네비게이션 */}
-      <div className="px-4 border-b border-gray-200">
+      <div className="px-4 border-b border-gray-200 bg-white">
         <nav className="flex space-x-1 -mb-px">
           {tabs.map((tab) => (
             <button
@@ -234,8 +256,6 @@ function MyPage() {
 
       {/* 탭 콘텐츠 */}
       <div className="p-0 md:p-4">
-        {" "}
-        {/* 모바일에서는 패딩 없이, 데스크탑에서는 패딩 있게 */}
         {renderTabContent()}
       </div>
     </>
