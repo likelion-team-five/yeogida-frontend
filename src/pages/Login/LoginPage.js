@@ -4,7 +4,7 @@ const LoginPage = () => {
   const handleKakaoLogin = () => {
     const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_API_KEY;
 
-    window.location.href = 'https://meaningful-barbette-moda-backend-69ee5792.koyeb.app//api/v1/auth/login/kakao/';
+    window.location.href = 'https://meaningful-barbette-moda-backend-69ee5792.koyeb.app/api/v1/auth/login/kakao/';
   };
 
   return (
