@@ -2,7 +2,7 @@ import axios from "axios";
 import { Cookies } from "react-cookie";
 
 const axiosInstance = axios.create({
-  baseURL: `https://meaningful-barbette-moda-backend-69ee5792.koyeb.app/`, // 기본 URL
+  baseURL: `http://localhost:8000`, // 기본 URL
 });
 
 axiosInstance.interceptors.request.use(
