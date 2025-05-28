@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageSectionHeader from '../components/common/PageSectionHeader';
 import { FiMapPin, FiClock, FiDollarSign, FiChevronLeft, FiChevronRight, FiNavigation, FiUsers } from 'react-icons/fi';
-import axiosinstance from '../auth/axiosinstance';
+import axiosinstance from "../auth/axiosinstance"
 
 function CarpoolDetailPage() {
   const { carpool_id } = useParams(); // URL 파라미터
