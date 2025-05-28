@@ -8,6 +8,12 @@ import {
   FiUsers,
   FiArrowRight,
 } from "react-icons/fi";
+import haeundaeImg from '../pages/images/haeundae.webp';
+import coffee from '../pages/images/coffee.jpg';
+import jeju from '../pages/images/jeju.jpg';
+import history from '../pages/images/history.png';
+
+
 
 // FeatureButton 컴포넌트는 클릭 시 navigate 함수를 직접 호출하도록 onClick을 전달받습니다.
 const FeatureButton = ({ icon: Icon, title, description, onClick }) => (
@@ -32,7 +38,7 @@ const popularCourses = [
     id: "courseA",
     title: "제주 동부 2박 3일 힐링 코스",
     thumbnailUrl:
-      "https://via.placeholder.com/300x200/FFA07A/FFFFFF?Text=Jeju+Course",
+      jeju,
     summary: "아름다운 해변과 오름을 따라 즐기는 여유로운 여행",
     tags: [{ name: "제주" }, { name: "힐링" }],
   },
@@ -40,7 +46,7 @@ const popularCourses = [
     id: "courseB",
     title: "경주 역사 문화 탐방 1일 코스",
     thumbnailUrl:
-      "https://via.placeholder.com/300x200/98FB98/FFFFFF?Text=Gyeongju+History",
+      history,
     summary: "신라의 숨결을 느낄 수 있는 알찬 당일치기 코스",
     tags: [{ name: "경주" }, { name: "역사" }],
   },
@@ -51,7 +57,7 @@ const latestReviews = [
     id: "reviewX",
     title: "부산 해운대 맛집 투어 후기!",
     thumbnailUrl:
-      "https://via.placeholder.com/150/ADD8E6/FFFFFF?Text=Busan+Food",
+      haeundaeImg,
     author: "여행가A",
     date: "2025-05-23",
     likes: 15,
@@ -61,7 +67,7 @@ const latestReviews = [
     id: "reviewY",
     title: "강릉 커피거리 카페 추천",
     thumbnailUrl:
-      "https://via.placeholder.com/150/FFD700/FFFFFF?Text=Gangneung+Coffee",
+      coffee,
     author: "커피사랑B",
     date: "2025-05-22",
     likes: 22,

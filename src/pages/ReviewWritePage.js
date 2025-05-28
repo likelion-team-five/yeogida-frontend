@@ -1,38 +1,31 @@
 import React, { useState, useEffect } from "react";
-import PageSectionHeader from "../components/common/PageSectionHeader"; // 경로 확인
+import PageSectionHeader from "../components/common/PageSectionHeader";
 import { FiUploadCloud, FiTag, FiSave, FiXCircle } from "react-icons/fi";
+import axiosInstance from "../auth/axiosinstance";
 
-// 수정 모드일 경우 기존 데이터를 불러오는 함수 (더미)
-// 실제로는 API 호출을 통해 데이터를 가져옵니다.
 const fetchExistingReviewDataForEdit = async (reviewIdToEdit) => {
   if (!reviewIdToEdit) return null;
   console.log(`Fetching review data for editing: ${reviewIdToEdit}`);
-  // API 호출 시뮬레이션
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: reviewIdToEdit,
-        title: `(수정) ${reviewIdToEdit}의 제목`,
-        content: `${reviewIdToEdit}에 대한 기존 내용입니다. 여러 줄일 수 있습니다.\n다음 줄 내용.`,
-        images: [
-          /* { id: 'img1', url: 'https://via.placeholder.com/100?text=기존이미지1', file: null } */
-        ],
-        tags: ["기존태그1", "기존태그2"],
-      });
-    }, 300);
-  });
+
+  try {
+    const response = await axiosInstance.get(`/api/v1/reviews/${reviewIdToEdit}`);
+    console.log("Fetched data for editing:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching review data for edit:", error);
+    throw error;
+  }
 };
 
 function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
-  // App.js로부터 props 받음
   const isEditMode = Boolean(reviewIdToEdit);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [images, setImages] = useState([]); // { id: string, url: string, file?: File }
+  const [images, setImages] = useState([]);
   const [tags, setTags] = useState([]);
   const [currentTagInput, setCurrentTagInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // 데이터 로딩 상태
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isEditMode && reviewIdToEdit) {
@@ -42,7 +35,7 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
           if (data) {
             setTitle(data.title || "");
             setContent(data.content || "");
-            setImages(data.images || []); // 이미지 객체 구조에 맞게 조정 필요
+            setImages(data.images || []);
             setTags(data.tags || []);
           }
           setIsLoading(false);
@@ -50,7 +43,6 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
         .catch((error) => {
           console.error("Error fetching review data for edit:", error);
           setIsLoading(false);
-          // 에러 처리 (예: 알림 표시, 목록으로 리다이렉트)
           if (onNavigate) onNavigate("reviews");
         });
     }
@@ -73,7 +65,7 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
   const removeImage = (imageId) => {
     const imageToRemove = images.find((img) => img.id === imageId);
     if (imageToRemove && imageToRemove.url.startsWith("blob:")) {
-      URL.revokeObjectURL(imageToRemove.url); // 메모리 누수 방지
+      URL.revokeObjectURL(imageToRemove.url);
     }
     setImages((prev) => prev.filter((img) => img.id !== imageId));
   };
@@ -98,6 +90,13 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
     setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
+  const getCsrfTokenFromCookie = () => {
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrftoken='));
+    return cookieValue ? cookieValue.split('=')[1] : null;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!title.trim() || !content.trim()) {
@@ -105,48 +104,57 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
       return;
     }
 
-    // 실제 API 호출 로직
     const formDataToSubmit = new FormData();
     formDataToSubmit.append("title", title);
     formDataToSubmit.append("content", content);
     tags.forEach((tag) => formDataToSubmit.append("tags[]", tag));
     images.forEach((img) => {
       if (img.file) {
-        // 새로운 파일만 FormData에 추가
         formDataToSubmit.append("images[]", img.file);
       } else if (isEditMode && img.url) {
-        // 수정 모드 시 기존 이미지 URL (서버에서 처리 방식에 따라)
         formDataToSubmit.append("existingImageUrls[]", img.url);
       }
     });
-    // 수정 모드일 경우 reviewIdToEdit도 함께 전송
     if (isEditMode) formDataToSubmit.append("reviewId", reviewIdToEdit);
 
-    console.log("Submitting review with FormData:", formDataToSubmit); // 실제로는 API로 전송
-    // 예시: const response = await api.post('/reviews', formDataToSubmit);
+    const csrfToken = getCsrfTokenFromCookie();
+    if (!csrfToken) {
+      console.error("CSRF Token not found in cookies!");
+      return;
+    }
 
-    alert(isEditMode ? "후기가 수정되었습니다!" : "후기가 등록되었습니다!");
+    try {
+      const response = await axiosInstance.post("/api/v1/reviews", formDataToSubmit, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "X-CSRFToken": csrfToken,
+        },
+      });
 
-    if (onNavigate) {
-      // 수정 모드였다면 해당 상세 페이지로, 새 글이었다면 목록 페이지로 이동
-      // 또는 API 응답에서 새로 생성/수정된 글의 ID를 받아 상세 페이지로 이동
-      onNavigate(
-        isEditMode ? "reviewDetail" : "reviews",
-        isEditMode ? reviewIdToEdit : null /* 새 글의 ID */,
-      );
+      alert(isEditMode ? "후기가 수정되었습니다!" : "후기가 등록되었습니다!");
+      if (onNavigate) {
+        onNavigate(isEditMode ? "reviewDetail" : "reviews", isEditMode ? reviewIdToEdit : null);
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      alert("후기 제출에 실패했습니다. 다시 시도해주세요.");
+      if (error.response) {
+        console.error("Error Response Data:", error.response.data);
+        console.error("Error Response Status:", error.response.status);
+      }
     }
   };
 
   const handleCancel = () => {
     if (
       window.confirm(
-        "작성을 취소하시겠습니까? 변경사항이 저장되지 않을 수 있습니다.",
+        "작성을 취소하시겠습니까? 변경사항이 저장되지 않을 수 있습니다."
       )
     ) {
       if (onNavigate) {
         onNavigate(
           isEditMode ? "reviewDetail" : "reviews",
-          isEditMode ? reviewIdToEdit : null,
+          isEditMode ? reviewIdToEdit : null
         );
       } else {
         window.history.back();
@@ -175,10 +183,6 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
         title={isEditMode ? "후기 수정" : "새 후기 작성"}
         showBackButton={true}
         onBackClick={handleCancel}
-        actions={
-          <div className="flex space-x-2">
-</div>
-        }
       />
       <div className="flex-grow overflow-y-auto p-4 md:p-6">
         <form
@@ -186,12 +190,9 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
           onSubmit={handleSubmit}
           className="space-y-6 bg-white p-4 md:p-6 rounded-lg shadow"
         >
-          {/* 제목 */}
+          {/* 제목 입력 */}
           <div>
-            <label
-              htmlFor="review-title"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="review-title" className="block text-sm font-medium text-gray-700 mb-1">
               제목 <span className="text-red-500">*</span>
             </label>
             <input
@@ -205,12 +206,9 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
             />
           </div>
 
-          {/* 내용 */}
+          {/* 내용 입력 */}
           <div>
-            <label
-              htmlFor="review-content"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="review-content" className="block text-sm font-medium text-gray-700 mb-1">
               내용 <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -226,17 +224,12 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
 
           {/* 이미지 업로드 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              사진 첨부 (최대 5장)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">사진 첨부 (최대 5장)</label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
                 <FiUploadCloud className="mx-auto h-12 w-12 text-gray-400" />
                 <div className="flex text-sm text-gray-600">
-                  <label
-                    htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                  >
+                  <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                     <span>파일 선택</span>
                     <input
                       id="file-upload"
@@ -278,18 +271,12 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
 
           {/* 태그 입력 */}
           <div>
-            <label
-              htmlFor="review-tags"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="review-tags" className="block text-sm font-medium text-gray-700 mb-1">
               태그 (Enter로 추가, 최대 10개)
             </label>
             <div className="flex flex-wrap items-center gap-2 p-2.5 border border-gray-300 rounded-md">
               {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
-                >
+                <span key={tag} className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
                   {tag}
                   <button
                     type="button"
@@ -310,8 +297,8 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
                   tags.length >= 10
                     ? "최대 10개까지 가능"
                     : tags.length === 0
-                      ? "예: #제주도 #가족여행"
-                      : ""
+                    ? "예: #제주도 #가족여행"
+                    : ""
                 }
                 className="flex-grow p-1 outline-none text-sm min-w-[100px]"
                 disabled={tags.length >= 10}
@@ -319,17 +306,17 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
             </div>
           </div>
 
-          {/* 하단 액션 버튼 (폼과 연결) */}
+          {/* 하단 액션 버튼 */}
           <div className="pt-5 border-t border-gray-200 flex justify-end space-x-3">
             <button
-              type="button" // submit이 아니므로 form 태그의 onSubmit을 발동시키지 않음
+              type="button"
               onClick={handleCancel}
               className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
             >
               취소
             </button>
             <button
-              type="submit" // 이 버튼이 form의 submit을 담당
+              type="submit"
               className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               {isEditMode ? "후기 수정 완료" : "후기 등록하기"}

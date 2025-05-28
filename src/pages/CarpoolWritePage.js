@@ -2,36 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageSectionHeader from '../components/common/PageSectionHeader';
 import { FiSave, FiXCircle, FiMapPin, FiClock, FiUsers, FiDollarSign, FiInfo, FiShield, FiPlusCircle, FiEdit3 } from 'react-icons/fi';
+import axiosInstance from '../auth/axiosinstance'; // axios 인스턴스
 
-// 수정 모드 데이터 fetch 함수 (파일 상단에 한 번만 정의)
+// 수정 모드 데이터 fetch 함수
 const fetchExistingCarpoolDataForEdit = async (carpoolId) => {
   if (!carpoolId) return null;
-  console.log(`Fetching carpool data for edit: ${carpoolId}`);
-  // API 호출 시뮬레이션
-  return new Promise(resolve => setTimeout(() => {
-    resolve({
-      from: '기존 출발지 (예: 서울 시청)',
-      to: '기존 도착지 (예: 인천 국제공항)',
-      departureDateTime: '2025-07-15T10:30', // HTML datetime-local 형식
-      availableSeats: '2',
-      pricePerSeat: '25000',
-      description: '기존 카풀 설명입니다. 편안하게 모시겠습니다. 중간 경유 협의 가능합니다.',
-      vehicleInfo: '현대 소나타 (흰색), 12가3456',
-      isFemaleOnly: false,
-      rules: ['금연', '반려동물 동반 불가']
-    });
-  }, 300));
+  try {
+    const response = await axiosInstance.get(`/api/v1/carpools/${carpoolId}`);
+    console.log('GET 기존 카풀 데이터:', response.status, response.data);
+    return response.data;
+  } catch (error) {
+    console.error('기존 카풀 데이터 불러오기 실패:', error);
+    throw error;
+  }
 };
 
 function CarpoolWritePage() {
-  const { carpoolId: carpoolIdFromParams } = useParams(); // URL 파라미터에서 ID 가져오기
+  const { carpoolId: carpoolIdFromParams } = useParams(); 
   const navigate = useNavigate();
   const isEditMode = Boolean(carpoolIdFromParams);
 
   const [formData, setFormData] = useState({
     from: '',
     to: '',
-    departureDateTime: '', // YYYY-MM-DDTHH:mm
+    departureDateTime: '',
     availableSeats: '1',
     pricePerSeat: '',
     description: '',
@@ -40,28 +34,37 @@ function CarpoolWritePage() {
     rules: [],
   });
   const [customRule, setCustomRule] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // 수정 모드 시 데이터 로딩
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isEditMode && carpoolIdFromParams) {
       setIsLoading(true);
-      fetchExistingCarpoolDataForEdit(carpoolIdFromParams).then(data => {
-        if (data) {
-            // departureDateTime이 로컬 시간대로 올바르게 표시되도록 new Date() 사용 지양
-            // API가 ISO 8601 형식 (YYYY-MM-DDTHH:MM:SSZ 또는 YYYY-MM-DDTHH:MM)으로 주면 그대로 사용 가능
-            // 만약 서버 시간이 UTC이고 로컬 시간으로 변환해야 한다면, 여기서 변환 로직 필요
-            setFormData(prev => ({...prev, ...data}));
-        } else {
+      fetchExistingCarpoolDataForEdit(carpoolIdFromParams)
+        .then(data => {
+          if (data) {
+            // API로 받은 데이터를 formData 형태에 맞게 조정 필요시 여기서 변환
+            setFormData({
+              from: data.departure || '',
+              to: data.destination || '',
+              departureDateTime: data.departure_time ? data.departure_time.slice(0,16) : '', // datetime-local 형식 맞춤 (YYYY-MM-DDTHH:mm)
+              availableSeats: data.seats_available?.toString() || '1',
+              pricePerSeat: '', // 서버에 가격 정보 있으면 매핑
+              description: data.description || '',
+              vehicleInfo: '', // 서버에 차량 정보 있으면 매핑
+              isFemaleOnly: false, // 서버에 있으면 매핑
+              rules: [], // 서버에 있으면 매핑
+            });
+          } else {
             alert('수정할 카풀 정보를 찾을 수 없습니다.');
             navigate('/carpools');
-        }
-        setIsLoading(false);
-      }).catch(error => {
-        console.error("Error fetching carpool data for edit:", error);
-        setIsLoading(false);
-        alert('카풀 정보 로딩 중 오류가 발생했습니다.');
-        navigate('/carpools');
-      });
+          }
+          setIsLoading(false);
+        })
+        .catch(error => {
+          alert('카풀 정보 로딩 중 오류가 발생했습니다.');
+          setIsLoading(false);
+          navigate('/carpools');
+        });
     }
   }, [isEditMode, carpoolIdFromParams, navigate]);
 
@@ -78,7 +81,7 @@ function CarpoolWritePage() {
       setFormData(prev => ({...prev, rules: [...prev.rules, customRule.trim()]}));
       setCustomRule('');
     } else if (formData.rules.length >= 5) {
-        alert('규칙은 최대 5개까지 추가할 수 있습니다.');
+      alert('규칙은 최대 5개까지 추가할 수 있습니다.');
     }
   };
 
@@ -86,17 +89,46 @@ function CarpoolWritePage() {
     setFormData(prev => ({...prev, rules: prev.rules.filter(rule => rule !== ruleToRemove)}));
   };
 
-  const handleSubmit = (e) => {
+  // 등록/수정 API 호출
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 필수값 체크
     if (!formData.from || !formData.to || !formData.departureDateTime || !formData.availableSeats || !formData.pricePerSeat) {
-      alert('별표(*) 표시된 필수 항목을 모두 입력해주세요.'); return;
+      alert('별표(*) 표시된 필수 항목을 모두 입력해주세요.');
+      return;
     }
-    // 가격이 숫자인지, 좌석수가 양의 정수인지 등 추가 유효성 검사 가능
-    console.log('카풀 등록/수정 데이터:', formData);
-    alert(`카풀이 ${isEditMode ? '수정' : '등록'}되었습니다! (API 호출 시뮬레이션)`);
-    // 성공 후 상세 또는 목록 페이지로 이동 (API 응답에서 ID를 받아 사용)
-    const targetId = isEditMode ? carpoolIdFromParams : `new_cp_${Date.now()}`; // 새 ID 임시 생성
-    navigate(isEditMode ? `/carpools/${targetId}` : '/carpools');
+
+    const payload = {
+      departure: formData.from,
+      destination: formData.to,
+      departure_time: new Date(formData.departureDateTime).toISOString(),
+      seats_available: parseInt(formData.availableSeats, 10),
+      title: formData.description?.slice(0, 20) || '카풀', // 제목은 예시, 필요시 수정
+      description: formData.description,
+      // 필요시 차량 정보, 규칙 등 추가 필드도 전송
+    };
+
+    try {
+      let response;
+      if (isEditMode) {
+        response = await axiosInstance.put(`/api/v1/carpools/${carpoolIdFromParams}`, payload);
+        console.log('PUT 카풀 수정 성공:', response.status, response.data);
+      } else {
+        response = await axiosInstance.post('/api/v1/carpools', payload);
+        console.log('POST 카풀 등록 성공:', response.status, response.data);
+      }
+
+      alert(`카풀이 ${isEditMode ? '수정' : '등록'}되었습니다!`);
+      
+      // 성공 후 상세 페이지 또는 목록 페이지 이동
+      const newId = isEditMode ? carpoolIdFromParams : response.data.id;
+      navigate(`/carpools/${newId}`);
+
+    } catch (error) {
+      console.error('카풀 등록/수정 실패:', error.response || error);
+      alert('카풀 등록/수정 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
   };
 
   const handleCancel = () => {
@@ -111,12 +143,12 @@ function CarpoolWritePage() {
 
   if (isEditMode && isLoading) {
     return (
-        <>
-            <PageSectionHeader title="카풀 정보 로딩 중..." showBackButton onBackClick={handleCancel} />
-            <div className="flex-grow flex items-center justify-center p-4">
-                <p className="text-gray-500">기존 카풀 정보를 불러오는 중입니다...</p>
-            </div>
-        </>
+      <>
+        <PageSectionHeader title="카풀 정보 로딩 중..." showBackButton onBackClick={handleCancel} />
+        <div className="flex-grow flex items-center justify-center p-4">
+          <p className="text-gray-500">기존 카풀 정보를 불러오는 중입니다...</p>
+        </div>
+      </>
     );
   }
 
