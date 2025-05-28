@@ -1,45 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import PageSectionHeader from '../components/common/PageSectionHeader'; // 경로 확인
-import CommentInput from '../components/review/CommentInput'; // 경로 확인
-import { FaUserCircle } from 'react-icons/fa';
-import { AiOutlineHeart, AiFillHeart, AiOutlineEdit, AiOutlineDelete } from 'react-icons/ai';
-import { BsCardImage, BsChatDots, BsArrowReturnRight } from 'react-icons/bs';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import PageSectionHeader from "../components/common/PageSectionHeader"; // 경로 확인
+import CommentInput from "../components/review/CommentInput"; // 경로 확인
+import { FaUserCircle } from "react-icons/fa";
+import { AiOutlineHeart, AiFillHeart, AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
+import { BsCardImage, BsArrowReturnRight } from "react-icons/bs";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import axiosInstance from "../auth/axiosinstance"; // axios 인스턴스
 
-// 더미 데이터 및 fetch 함수 (실제로는 API 호출)
-const fetchReviewDetailData = async (reviewId) => {
-  if (!reviewId) return null;
-  console.log(`Fetching review detail for ID: ${reviewId}`);
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const sampleData = {
-        id: reviewId,
-        title: `샘플 후기: ${reviewId}의 멋진 경험`,
-        author: '여행가김샘플',
-        // authorProfileImg: 'https://via.placeholder.com/40/7B68EE/FFFFFF?Text=S', // 이미지가 있는 경우
-        authorProfileImg: null, // 이미지가 없는 경우 테스트용
-        date: '2025년 05월 10일',
-        content: `이것은 ${reviewId}에 대한 상세 후기 내용입니다. \n아주 즐거운 여행이었고, 다양한 경험을 했습니다. 특히 음식이 맛있었고 풍경이 아름다웠습니다. \n\n다음에 또 방문하고 싶은 곳입니다. 여러분께도 강력 추천합니다!\n\n#샘플태그 #여행 #추천`,
-        images: [
-          `https://via.placeholder.com/800x500/ADD8E6/000000?Text=Sample+Image+1+for+${reviewId}`,
-          `https://via.placeholder.com/800x500/90EE90/000000?Text=Sample+Image+2+for+${reviewId}`,
-          `https://via.placeholder.com/800x500/FFB6C1/000000?Text=Sample+Image+3+for+${reviewId}`,
-        ],
-        likes: Math.floor(Math.random() * 200) + 50,
-        isLikedByCurrentUser: Math.random() < 0.5,
-        isCurrentUserAuthor: reviewId === 'review1', // 예시: review1의 작성자만 현재 유저
-        comments: [
-          { id: 'c1', user: '댓글러1', profileImg: undefined, text: `정말 좋은 후기네요, ${reviewId}에 대한 정보 감사합니다!`, date: '3일 전', isReply: false },
-          { id: 'c2', user: '여행가김샘플', profileImg: undefined,  text: '읽어주셔서 감사합니다!', date: '2일 전', isReply: true, replyingTo: '댓글러1' },
-          { id: 'c3', user: '익명사용자', profileImg: undefined,  text: '잘 봤습니다~', date: '1일 전', isReply: false },
-        ]
-      };
-      resolve(sampleData);
-    }, 300);
-  });
+// 테스트용 로그인된 사용자 정보
+const loggedInUser = {
+  profileImageUrl: 'https://via.placeholder.com/40/LoggedInUser/FFFFFF?Text=Me', // 로그인된 사용자 이미지 (테스트용)
 };
 
+// 후기 상세 정보를 가져오는 API 호출
+const fetchReviewDetailData = async (reviewId) => {
+  if (!reviewId) return null;
+  try {
+    const response = await axiosInstance.get(`/api/v1/reviews/${reviewId}`);
+    return response.data; // 실제 후기 데이터 반환
+  } catch (error) {
+    console.error("후기 상세 정보를 가져오는 데 오류가 발생했습니다:", error);
+    throw error; // 오류 발생 시 에러 처리
+  }
+};
+
+// 댓글 작성 API
+const submitComment = async (reviewId, commentText) => {
+  try {
+    const response = await axiosInstance.post(`/api/v1/reviews/${reviewId}/comments`, { text: commentText });
+    return response.data; // 새로 작성된 댓글 반환
+  } catch (error) {
+    console.error("댓글 작성 오류:", error);
+    throw error;
+  }
+};
+
+// 좋아요 API
+const toggleLikeReview = async (reviewId, isLiked) => {
+  try {
+    const url = `/api/v1/reviews/${reviewId}/likes`;
+    const method = isLiked ? 'delete' : 'post'; // 좋아요 취소는 DELETE, 좋아요 추가는 POST
+    const response = await axiosInstance[method](url);
+    return response.data; // 성공적인 응답 반환
+  } catch (error) {
+    console.error("좋아요 오류:", error);
+    throw error;
+  }
+};
+
+// 후기 삭제 API
+const deleteReview = async (reviewId) => {
+  try {
+    const response = await axiosInstance.delete(`/api/v1/reviews/${reviewId}`);
+    return response.data; // 삭제된 후기 반환
+  } catch (error) {
+    console.error("후기 삭제 오류:", error);
+    throw error;
+  }
+};
+
+// 댓글 삭제 API
+const deleteComment = async (reviewId, commentId) => {
+  try {
+    const response = await axiosInstance.delete(`/api/v1/reviews/${reviewId}/comments/${commentId}`);
+    return response.data; // 삭제된 댓글 반환
+  } catch (error) {
+    console.error("댓글 삭제 오류:", error);
+    throw error;
+  }
+};
 
 function ReviewDetailPage() {
   const { reviewId } = useParams();
@@ -52,16 +82,16 @@ function ReviewDetailPage() {
   useEffect(() => {
     if (reviewId) {
       setIsLoading(true);
-      fetchReviewDetailData(reviewId).then(data => {
+      fetchReviewDetailData(reviewId).then((data) => {
         if (data) {
           setReview(data);
-          setIsLiked(data.isLikedByCurrentUser);
+          setIsLiked(data.isLikedByCurrentUser); // 사용자가 이미 좋아요를 눌렀는지 여부를 설정
         } else {
-          navigate('/reviews', { replace: true });
+          navigate('/reviews', { replace: true }); // 데이터가 없으면 목록으로 이동
         }
         setIsLoading(false);
-      }).catch(error => {
-        console.error("Error fetching review detail:", error);
+      }).catch((error) => {
+        console.error("후기 상세 정보를 가져오는 데 오류가 발생했습니다:", error);
         setIsLoading(false);
         navigate('/reviews', { replace: true });
       });
@@ -71,10 +101,17 @@ function ReviewDetailPage() {
     }
   }, [reviewId, navigate]);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setReview(prev => prev ? ({ ...prev, likes: isLiked ? prev.likes - 1 : prev.likes + 1 }) : null);
-    // 실제 API 호출
+  const handleLike = async () => {
+    try {
+      const updatedReview = await toggleLikeReview(review.id, isLiked);
+      setIsLiked(!isLiked);
+      setReview((prevReview) => ({
+        ...prevReview,
+        likes: updatedReview.likes,
+      }));
+    } catch (error) {
+      console.error("좋아요 추가 오류:", error);
+    }
   };
 
   const handleEdit = () => {
@@ -85,11 +122,33 @@ function ReviewDetailPage() {
 
   const handleDelete = async () => {
     if (review && window.confirm('정말로 이 후기를 삭제하시겠습니까?')) {
-      console.log(`Deleting review ID ${review.id}`);
-      // 실제 API 호출
-      alert(`후기 ID ${review.id} 삭제 완료`);
-      navigate('/reviews');
+      try {
+        await deleteReview(review.id);
+        alert(`후기 ID ${review.id} 삭제 완료`);
+        navigate('/reviews');
+      } catch (error) {
+        console.error("후기 삭제 오류:", error);
+        alert("후기 삭제 실패");
+      }
     }
+  };
+
+  const handleSubmitComment = async (commentText) => {
+    try {
+      const newComment = await submitComment(review.id, commentText);
+      setReview((prevReview) => ({
+        ...prevReview,
+        comments: [...prevReview.comments, newComment],
+      }));
+      alert("댓글이 등록되었습니다.");
+    } catch (error) {
+      console.error("댓글 작성 오류:", error);
+      alert("댓글 등록에 실패했습니다.");
+    }
+  };
+
+  const handleGoBack = () => {
+    navigate('/reviews');
   };
 
   const navigateImage = (direction) => {
@@ -98,32 +157,6 @@ function ReviewDetailPage() {
     if (newIndex < 0) newIndex = review.images.length - 1;
     else if (newIndex >= review.images.length) newIndex = 0;
     setCurrentImageIndex(newIndex);
-  };
-
-  const handleSubmitComment = (commentText) => {
-    if (!review) return;
-    console.log(`Submitting comment for review ${review.id}:`, commentText);
-    const newCommentEntry = {
-      id: `c${Date.now()}`,
-      user: '현재사용자', // 실제로는 로그인된 사용자 정보 사용
-      profileImg: loggedInUser.profileImageUrl, // 현재 로그인 유저 프로필 이미지
-      text: commentText,
-      date: '방금 전',
-      isReply: false,
-    };
-    setReview(prev => prev ? ({ ...prev, comments: [...prev.comments, newCommentEntry] }) : null);
-    alert('댓글이 등록되었습니다.');
-    // 실제 API 호출
-  };
-
-  const handleGoBack = () => {
-    navigate('/reviews');
-  };
-
-  // 현재 로그인한 사용자 정보 (예시, 실제로는 인증 상태에서 가져옴)
-  const loggedInUser = {
-    // profileImageUrl: 'https://via.placeholder.com/40/LoggedInUser/FFFFFF?Text=Me', // 로그인 유저 이미지 있는 경우
-    profileImageUrl: null, // 로그인 유저 이미지 없는 경우 테스트용
   };
 
   if (isLoading) {
@@ -170,7 +203,7 @@ function ReviewDetailPage() {
       <div className="flex-grow overflow-y-auto p-4 md:p-6 bg-white">
         {/* 작성자 정보 */}
         <div className="flex items-center mb-4 pb-4 border-b border-gray-100">
-          {review.authorProfileImg ? ( // <--- 수정된 부분: 작성자 프로필 이미지 또는 플레이스홀더
+          {review.authorProfileImg ? (
             <img src={review.authorProfileImg} alt={review.author} className="w-10 h-10 rounded-full mr-3 object-cover"/>
           ) : (
             <FaUserCircle size={40} className="text-gray-300 mr-3" />
@@ -198,7 +231,6 @@ function ReviewDetailPage() {
             )}
           </div>
         )}
-        {(!review.images || review.images.length === 0) && ( <div className="w-full aspect-[16/10] bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 mb-6 shadow-md"><BsCardImage size={60} /></div>)}
 
         {/* 본문 내용 */}
         <div className="prose prose-sm sm:prose-base max-w-none mb-6 whitespace-pre-line text-gray-700 leading-relaxed">{review.content}</div>
@@ -220,7 +252,7 @@ function ReviewDetailPage() {
           {review.comments.map(comment => (
             <div key={comment.id} className={`flex ${comment.isReply ? 'ml-8 md:ml-10' : ''}`}>
               {comment.isReply && <BsArrowReturnRight size={18} className="text-gray-400 mr-2 mt-1.5 flex-shrink-0"/>}
-              {comment.profileImg ? ( // <--- 수정된 부분: 댓글 작성자 프로필 이미지 또는 플레이스홀더
+              {comment.profileImg ? (
                 <img src={comment.profileImg} alt={comment.user} className="w-8 h-8 rounded-full mr-2.5 flex-shrink-0 object-cover"/>
               ) : (
                 <FaUserCircle size={32} className="text-gray-300 mr-2.5 flex-shrink-0" />

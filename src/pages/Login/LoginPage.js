@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import logo from '../../pages/images/logo1.svg';
 
 const LoginPage = () => {
   const handleKakaoLogin = () => {
@@ -9,7 +10,7 @@ const LoginPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
-      <img src="/input_file_0.png" alt="여기다 로고" className="w-48 sm:w-64 mb-8" />
+      <img src={logo} alt="로고" className="w-48 sm:w-64 mb-8" />
       <button
         onClick={handleKakaoLogin}
         className="w-full max-w-xs h-14 bg-[#FEE500] text-black rounded-full flex items-center justify-center shadow-md hover:brightness-110 transition-all"
