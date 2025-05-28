@@ -1,7 +1,6 @@
-// src/pages/HomePage.js
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import ListItemCard from "../components/common/ListItemCard"; // 경로 확인
+import ListItemCard from "../components/common/ListItemCard";
 import {
   FiCompass,
   FiMessageSquare,
@@ -13,9 +12,6 @@ import coffee from '../pages/images/coffee.jpg';
 import jeju from '../pages/images/jeju.jpg';
 import history from '../pages/images/history.png';
 
-
-
-// FeatureButton 컴포넌트는 클릭 시 navigate 함수를 직접 호출하도록 onClick을 전달받습니다.
 const FeatureButton = ({ icon: Icon, title, description, onClick }) => (
   <button
     onClick={onClick}
@@ -32,21 +28,18 @@ const FeatureButton = ({ icon: Icon, title, description, onClick }) => (
   </button>
 );
 
-// 더미 데이터 (실제로는 API 호출 또는 상태 관리)
 const popularCourses = [
   {
     id: "courseA",
     title: "제주 동부 2박 3일 힐링 코스",
-    thumbnailUrl:
-      jeju,
+    thumbnailUrl: jeju,
     summary: "아름다운 해변과 오름을 따라 즐기는 여유로운 여행",
     tags: [{ name: "제주" }, { name: "힐링" }],
   },
   {
     id: "courseB",
     title: "경주 역사 문화 탐방 1일 코스",
-    thumbnailUrl:
-      history,
+    thumbnailUrl: history,
     summary: "신라의 숨결을 느낄 수 있는 알찬 당일치기 코스",
     tags: [{ name: "경주" }, { name: "역사" }],
   },
@@ -56,46 +49,37 @@ const latestReviews = [
   {
     id: "reviewX",
     title: "부산 해운대 맛집 투어 후기!",
-    thumbnailUrl:
-      haeundaeImg,
+    thumbnailUrl: haeundaeImg,
     author: "여행가A",
     date: "2025-05-23",
     likes: 15,
     commentsCount: 3,
-  }, // commentsCount 추가
+  },
   {
     id: "reviewY",
     title: "강릉 커피거리 카페 추천",
-    thumbnailUrl:
-      coffee,
+    thumbnailUrl: coffee,
     author: "커피사랑B",
     date: "2025-05-22",
     likes: 22,
     commentsCount: 5,
-  }, // commentsCount 추가
+  },
 ];
 
 function HomePage() {
-  const navigate = useNavigate(); // useNavigate 훅 사용
+  const navigate = useNavigate();
 
   return (
     <>
-      {/* Hero Section */}
       <div className="p-6 md:p-8 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
         <div className="max-w-4xl mx-auto text-center py-12">
-          {/* 로고 이미지가 있다면 public 폴더에 넣고 /logo-white.png 와 같이 절대 경로로 사용하거나, import 해서 사용 */}
-          {/* <img src="/logo-white.png" alt="서비스 로고" className="h-16 mx-auto mb-6" /> */}
-          <h1 className="text-4xl font-bold mb-4">
-            여행의 모든 순간, 함께 만들어요!
-          </h1>
+          <h1 className="text-4xl font-bold mb-4">여행의 모든 순간, 함께 만들어요!</h1>
           <p className="text-lg opacity-90 mb-8">
-            나만의 코스를 계획하고, 생생한 후기를 공유하며, 함께 떠날 카풀
-            메이트를 찾아보세요.
+            나만의 코스를 계획하고, 생생한 후기를 공유하며, 함께 떠날 카풀 메이트를 찾아보세요.
           </p>
         </div>
       </div>
 
-      {/* 주요 기능 바로가기 버튼 */}
       <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <FeatureButton
           icon={FiCompass}
@@ -117,36 +101,33 @@ function HomePage() {
         />
       </div>
 
-      {/* 인기 여행 코스 */}
       <section className="p-6 md:p-8">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-          인기 여행 코스 🚌
-        </h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">인기 여행 코스 !!</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {popularCourses.map((course) => (
-            <ListItemCard
-              key={course.id}
-              imageUrl={course.thumbnailUrl}
-              title={course.title}
-              description={course.summary}
-              tags={course.tags}
-              // onClick={() => navigate(`/courses/${course.id}`)} // 코스 상세 라우트가 있다면
-              onClick={() =>
-                alert(
-                  `${course.title} 코스 상세 페이지로 이동 (라우트 설정 필요: /courses/${course.id})`,
-                )
-              }
-              imageSize="w-full h-40"
-            />
+            <div key={course.id} className="bg-white rounded shadow overflow-hidden">
+              <img src={course.thumbnailUrl} alt={course.title} className="w-full object-cover" />
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">{course.title}</h3>
+                <p className="text-sm text-gray-600 mb-2">{course.summary}</p>
+                <div className="flex flex-wrap gap-1">
+                  {course.tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full"
+                    >
+                      #{tag.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* 최신 후기 */}
       <section className="p-6 md:p-8">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-          최신 여행 후기 ✍️
-        </h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">최신 여행 후기 !!</h2>
         {latestReviews.map((review) => (
           <ListItemCard
             key={review.id}
@@ -159,7 +140,7 @@ function HomePage() {
                 <span>💬 {review.commentsCount}</span>
               </div>
             }
-            onClick={() => navigate(`/reviews/${review.id}`)} // 후기 상세 페이지로 이동
+            onClick={() => navigate(`/reviews/${review.id}`)}
           />
         ))}
       </section>

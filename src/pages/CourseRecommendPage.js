@@ -5,15 +5,17 @@ import SearchBarWithButton from '../components/common/SearchBarWithButton';
 import FilterSortSection from '../components/common/FilterSortSection';
 import ListItemCard from '../components/common/ListItemCard';
 import { FiFilter, FiHeart, FiMapPin, FiCalendar, FiStar } from 'react-icons/fi';
-import axiosInstance from '../auth/axiosinstance';
+import bb from '../pages/images/bb.jpg';
+import hh from '../pages/images/hh.jpg';
+import dd from '../pages/images/dd.jpg';
 
 const sortOptionsConfig = [
   { key: 'rating', label: '높은 평점순' },
   { key: 'recent', label: '최신 추천순' },
 ];
 
-const regions = ['all', '서울', '강원도', '부산', '경기도', '제주'];
-const themes = ['all', '힐링', '드라이브', '맛집탐방', '고궁', '아이와함께'];
+const regions = ['all', '서울', '강원도', '부산'];
+const themes = ['all', '힐링', '드라이브', '맛집탐방'];
 
 function CourseRecommendPage() {
   const navigate = useNavigate();
@@ -22,33 +24,53 @@ function CourseRecommendPage() {
   const [sortOrder, setSortOrder] = useState('rating');
   const [activeFilters, setActiveFilters] = useState({ region: 'all', theme: 'all' });
   const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading] = useState(false);
+  const [error] = useState(null);
   const [showSortOptions, setShowSortOptions] = useState(false);
 
-  // API 호출 함수
-  const fetchCourses = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axiosInstance.get('/api/v1/courses/');
-      console.log('API 전체 응답:', res);
-      console.log('API 데이터 (res.data):', res.data);
-      setCourses(res.data);
-    } catch (e) {
-      console.error('API 호출 실패:', e);
-      setError('추천 코스를 불러오는데 실패했습니다.');
-      setCourses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchCourses();
+    const dummyCourses = [
+      {
+        id: '1',
+        name: '서울 한옥 힐링 투어',
+        description: '북촌 한옥마을과 창덕궁을 걸으며 전통의 멋을 느껴보세요.',
+        theme: ['힐링', '고궁'],
+        region: '서울',
+        duration: '1일',
+        sites: ['북촌 한옥마을', '창덕궁', '인사동'],
+        imageUrl: hh,
+        rating: 4.8,
+        estimatedCost: { currency: '₩', amount: '15,000' },
+      },
+      {
+        id: '2',
+        name: '강원도 감성 드라이브',
+        description: '고성 해안도로를 따라 펼쳐지는 바다와 숲의 조화!',
+        theme: ['드라이브', '힐링'],
+        region: '강원도',
+        duration: '1박 2일',
+        sites: ['고성 해안도로', '속초 중앙시장'],
+        imageUrl: dd,
+        rating: 4.6,
+        estimatedCost: { currency: '₩', amount: '40,000' },
+      },
+      {
+        id: '3',
+        name: '부산 맛집 탐방',
+        description: '국제시장부터 해운대까지! 입이 즐거운 부산 여행.',
+        theme: ['맛집탐방'],
+        region: '부산',
+        duration: '2일',
+        sites: ['자갈치시장', '해운대', '광안리'],
+        imageUrl: bb,
+        rating: 4.9,
+        estimatedCost: { currency: '₩', amount: '55,000' },
+      },
+    ];
+
+    setCourses(dummyCourses);
   }, []);
 
-  // 필터, 검색, 정렬 적용
   const displayedCourses = useMemo(() => {
     let items = courses;
 
@@ -63,7 +85,7 @@ function CourseRecommendPage() {
 
     if (activeFilters.region !== 'all') {
       items = items.filter(course =>
-        course.theme && course.theme.some(t => t.toLowerCase() === activeFilters.region.toLowerCase())
+        course.region && course.region.toLowerCase() === activeFilters.region.toLowerCase()
       );
     }
     if (activeFilters.theme !== 'all') {
@@ -84,7 +106,6 @@ function CourseRecommendPage() {
     return items;
   }, [courses, searchTerm, activeFilters, sortOrder]);
 
-  // 필터 UI
   const filterControls = (
     <div className="flex items-center space-x-2">
       <select
@@ -129,8 +150,6 @@ function CourseRecommendPage() {
       />
 
       <div className="flex-grow overflow-y-auto p-0 md:p-4">
-        {loading && <p className="p-6 text-center text-gray-500">불러오는 중...</p>}
-        {error && <p className="p-6 text-center text-red-500">{error}</p>}
         {!loading && !error && (
           displayedCourses.length > 0 ? (
             <div className="divide-y divide-gray-100 md:divide-y-0 md:space-y-4">

@@ -1,176 +1,221 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageSectionHeader from '../components/common/PageSectionHeader';
-import { FiClock, FiMapPin, FiUsers, FiDollarSign, FiUser, FiInfo, FiEdit, FiTrash2 } from 'react-icons/fi';
-import { FaUserCircle } from 'react-icons/fa';
-import axiosInstance from '../auth/axiosinstance';
+import SearchBarWithButton from '../components/common/SearchBarWithButton';
+import FilterSortSection from '../components/common/FilterSortSection';
+import ListItemCard from '../components/common/ListItemCard';
+import { FiFilter, FiHeart, FiMapPin, FiCalendar, FiStar } from 'react-icons/fi';
+import bb from '../pages/images/bb.jpg';
+import hh from '../pages/images/hh.jpg';
+import dd from '../pages/images/dd.jpg';
 
-const fetchCarpoolDetailData = async (carpoolId) => {
-  if (!carpoolId) return null;
-  try {
-    const response = await axiosInstance.get(`/api/v1/carpools/${carpoolId}`);
-    if (response.status === 200) {
-      return response.data;
-    } else {
-      console.error("API 호출 실패, 상태 코드:", response.status);
-      throw new Error("응답 실패");
-    }
-  } catch (error) {
-    console.error("카풀 정보 로딩 실패:", error);
-    throw error;
-  }
-};
+const sortOptionsConfig = [
+  { key: 'rating', label: '높은 평점순' },
+  { key: 'recent', label: '최신 추천순' },
+];
 
-const deleteCarpool = async (carpoolId) => {
-  try {
-    const response = await axiosInstance.delete(`/api/v1/carpools/${carpoolId}`);
-    return response.status === 204;
-  } catch (error) {
-    console.error("카풀 삭제 실패:", error);
-    return false;
-  }
-};
+const regions = ['all', '서울', '강원도', '부산'];
+const themes = ['all', '힐링', '드라이브', '맛집탐방'];
 
-function CarpoolDetailPage() {
-  const { carpoolId } = useParams();
+function CourseRecommendPage() {
   const navigate = useNavigate();
-  const [carpool, setCarpool] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('rating');
+  const [activeFilters, setActiveFilters] = useState({ region: 'all', theme: 'all' });
+  const [courses, setCourses] = useState([]);
+  const [loading] = useState(false);
+  const [error] = useState(null);
+  const [showSortOptions, setShowSortOptions] = useState(false);
 
   useEffect(() => {
-    if (carpoolId) {
-      fetchCarpoolDetailData(carpoolId)
-        .then(data => {
-          setCarpool({
-            ...data,
-            driver: data.driver || { name: "홍길동", rating: "N/A", profileImg: "", totalDrives: 0, bio: "안전하게 모시겠습니다." },
-            vehicle: data.vehicle || { type: "세단", model: "쏘나타", color: "검정", number: "12가 3456" },
-            rules: data.rules || ["금연", "음식물 반입 금지"],
-            comments: data.comments || []
-          });
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setIsLoading(false);
-          navigate('/carpools', { replace: true });
-        });
-    }
-  }, [carpoolId, navigate]);
+    const dummyCourses = [
+      {
+        id: '1',
+        name: '서울 한옥 힐링 투어',
+        description: '북촌 한옥마을과 창덕궁을 걸으며 전통의 멋을 느껴보세요.',
+        theme: ['힐링', '고궁'],
+        region: '서울',
+        duration: '1일',
+        sites: ['북촌 한옥마을', '창덕궁', '인사동'],
+        imageUrl: hh,
+        rating: 4.8,
+        estimatedCost: { currency: '₩', amount: '15,000' },
+      },
+      {
+        id: '2',
+        name: '강원도 감성 드라이브',
+        description: '고성 해안도로를 따라 펼쳐지는 바다와 숲의 조화!',
+        theme: ['드라이브', '힐링'],
+        region: '강원도',
+        duration: '1박 2일',
+        sites: ['고성 해안도로', '속초 중앙시장'],
+        imageUrl: dd,
+        rating: 4.6,
+        estimatedCost: { currency: '₩', amount: '40,000' },
+      },
+      {
+        id: '3',
+        name: '부산 맛집 탐방',
+        description: '국제시장부터 해운대까지! 입이 즐거운 부산 여행.',
+        theme: ['맛집탐방'],
+        region: '부산',
+        duration: '2일',
+        sites: ['자갈치시장', '해운대', '광안리'],
+        imageUrl: bb,
+        rating: 4.9,
+        estimatedCost: { currency: '₩', amount: '55,000' },
+      },
+    ];
 
-  const handleGoBack = () => navigate('/carpools');
-  const handleEdit = () => navigate(`/carpools/${carpoolId}/edit`);
-  const handleDelete = async () => {
-    if (window.confirm("정말 이 카풀을 삭제하시겠습니까?")) {
-      const success = await deleteCarpool(carpoolId);
-      if (success) {
-        alert("카풀이 삭제되었습니다.");
-        navigate('/carpools');
-      } else {
-        alert("삭제에 실패했습니다. 다시 시도해주세요.");
-      }
+    setCourses(dummyCourses);
+  }, []);
+
+  const displayedCourses = useMemo(() => {
+    let items = courses;
+
+    if (searchTerm.trim()) {
+      const lower = searchTerm.toLowerCase();
+      items = items.filter(course =>
+        (course.name && course.name.toLowerCase().includes(lower)) ||
+        (course.description && course.description.toLowerCase().includes(lower)) ||
+        (course.theme && course.theme.some(t => t.toLowerCase().includes(lower)))
+      );
     }
+
+    if (activeFilters.region !== 'all') {
+      items = items.filter(course =>
+        course.region && course.region.toLowerCase() === activeFilters.region.toLowerCase()
+      );
+    }
+    if (activeFilters.theme !== 'all') {
+      items = items.filter(course =>
+        course.theme && course.theme.some(t => t.toLowerCase() === activeFilters.theme.toLowerCase())
+      );
+    }
+
+    switch (sortOrder) {
+      case 'recent':
+        items = items.slice().sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+        break;
+      case 'rating':
+      default:
+        items = items.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+    }
+    return items;
+  }, [courses, searchTerm, activeFilters, sortOrder]);
+
+  const handleBackgroundClick = () => {
+    if (showSortOptions) setShowSortOptions(false);
   };
 
-  if (isLoading) {
-    return (
-      <>
-        <PageSectionHeader title="로딩 중..." showBackButton onBackClick={handleGoBack} />
-        <div className="p-4 text-center">카풀 정보를 불러오는 중...</div>
-      </>
-    );
-  }
-
-  if (!carpool) {
-    return (
-      <>
-        <PageSectionHeader title="오류" showBackButton onBackClick={handleGoBack} />
-        <div className="p-4 text-center">카풀 정보를 찾을 수 없습니다.</div>
-      </>
-    );
-  }
-
-  const departureDate = new Date(carpool.departure_time);
-  const arrivalDate = new Date(carpool.estimated_arrival_time);
+  const filterControls = (
+    <div className="flex items-center space-x-2">
+      <select
+        value={activeFilters.region}
+        onChange={(e) => setActiveFilters(prev => ({ ...prev, region: e.target.value }))}
+        className="text-xs p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+      >
+        {regions.map(r => (
+          <option key={r} value={r}>{r === 'all' ? '지역 전체' : r}</option>
+        ))}
+      </select>
+      <select
+        value={activeFilters.theme}
+        onChange={(e) => setActiveFilters(prev => ({ ...prev, theme: e.target.value }))}
+        className="text-xs p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+      >
+        {themes.map(t => (
+          <option key={t} value={t}>{t === 'all' ? '테마 전체' : t}</option>
+        ))}
+      </select>
+    </div>
+  );
 
   return (
-    <>
-      <PageSectionHeader
-        title={carpool.title || "카풀 상세 정보"}
-        showBackButton onBackClick={handleGoBack}
-        actions={
-          <div className="flex space-x-2">
-            <button onClick={handleEdit} className="p-2 text-blue-600 hover:bg-blue-100 rounded"><FiEdit size={18} /></button>
-            <button onClick={handleDelete} className="p-2 text-red-500 hover:bg-red-100 rounded"><FiTrash2 size={18} /></button>
-          </div>
-        }
+    <div onClick={handleBackgroundClick} className="relative">
+      <PageSectionHeader title="AI 추천 여행 코스" />
+
+      <SearchBarWithButton
+        placeholder="어떤 여행 코스를 찾으시나요? (예: 서울, 힐링)"
+        searchTerm={searchTerm}
+        onSearchChange={e => setSearchTerm(e.target.value)}
       />
-      <div className="p-4 space-y-4">
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-lg font-semibold mb-2 flex items-center"><FiUser className="mr-2" />운전자 정보</h2>
-          <div className="flex items-center mb-2">
-            {carpool.driver.profileImg ? (
-              <img src={carpool.driver.profileImg} alt={carpool.driver.name} className="w-10 h-10 rounded-full mr-3 object-cover border" />
-            ) : (
-              <FaUserCircle size={40} className="text-gray-300 mr-3" />
-            )}
-            <div>
-              <p className="text-sm font-medium">{carpool.driver.name}</p>
-              <p className="text-xs text-gray-500">별점: {carpool.driver.rating} (총 {carpool.driver.totalDrives}회 운행)</p>
+
+      <FilterSortSection
+        filterIcon={FiFilter}
+        showSortOptions={showSortOptions}
+        onFilterClick={(e) => {
+          e.stopPropagation();
+          setShowSortOptions(!showSortOptions);
+        }}
+        sortOptions={sortOptionsConfig}
+        currentSortKey={sortOrder}
+        onSortOptionClick={key => { setSortOrder(key); setShowSortOptions(false); }}
+        actionButton={filterControls}
+      />
+
+      <div className="flex-grow overflow-y-auto p-0 md:p-4">
+        {!loading && !error && (
+          displayedCourses.length > 0 ? (
+            <div className="divide-y divide-gray-100 md:divide-y-0 md:space-y-4">
+              {displayedCourses.map(course => (
+                <div
+                  key={course.id}
+                  className="group md:rounded-lg md:shadow-sm hover:shadow-md transition-shadow bg-white overflow-hidden"
+                >
+                  <ListItemCard
+                    imageUrl={course.imageUrl}
+                    title={course.name}
+                    tags={course.theme ? course.theme.map(t => ({ name: t })) : []}
+                    imageSize="w-full h-40 md:h-48"
+                    imageContainerClassName="md:rounded-t-lg"
+                    onClick={() => navigate(`/courses/${course.id}`)}
+                    cardClassName="p-0"
+                    contentClassName="p-3 md:p-4 flex-grow"
+                    textContainerClassName="flex flex-col justify-between flex-grow"
+                    badge={
+                      <button
+                        onClick={(e) => { e.stopPropagation(); alert(`코스 ID ${course.id} 찜하기!`); }}
+                        className="p-1.5 bg-black bg-opacity-30 text-white rounded-full hover:bg-opacity-50 transition-opacity"
+                        title="찜하기"
+                      >
+                        <FiHeart size={16} />
+                      </button>
+                    }
+                    customContent={
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-600 mt-1 leading-relaxed line-clamp-2 mb-2">
+                          {course.description}
+                        </p>
+                        <div className="border-t border-gray-100 pt-2 mt-2">
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                            <span className="flex items-center"><FiCalendar size={13} className="mr-1" />{course.duration}</span>
+                            <span className="flex items-center"><FiMapPin size={13} className="mr-1" />{course.sites?.length || 0}개 경유지</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>예상 비용: {course.estimatedCost?.currency} {course.estimatedCost?.amount}</span>
+                            <span className="flex items-center font-semibold text-amber-500">
+                              <FiStar size={14} className="mr-0.5 fill-current" /> {course.rating ? course.rating.toFixed(1) : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  />
+                </div>
+              ))}
             </div>
-          </div>
-          <p className="text-sm text-gray-600">{carpool.driver.bio}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-lg font-semibold mb-2 flex items-center"><FiInfo className="mr-2" />차량 정보</h2>
-          <p className="text-sm">종류: {carpool.vehicle.type}</p>
-          <p className="text-sm">모델: {carpool.vehicle.model}</p>
-          <p className="text-sm">색상: {carpool.vehicle.color}</p>
-          <p className="text-sm">번호판: {carpool.vehicle.number}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-lg font-semibold mb-2">여정 상세</h2>
-          <p className="text-sm flex items-center"><FiMapPin className="mr-2 text-blue-500" />출발지: {carpool.departure}</p>
-          <p className="text-sm flex items-center"><FiMapPin className="mr-2 text-blue-500" />도착지: {carpool.destination}</p>
-          <p className="text-sm flex items-center"><FiClock className="mr-2 text-blue-500" />출발 시간: {departureDate.toLocaleString('ko-KR')}</p>
-          <p className="text-sm flex items-center"><FiClock className="mr-2 text-blue-500" />예상 도착 시간: {arrivalDate.toLocaleString('ko-KR')}</p>
-          <p className={`text-sm flex items-center ${carpool.seats_available > 0 ? 'text-green-600' : 'text-red-500'}`}><FiUsers className="mr-2 text-blue-500" />{carpool.passengers?.length || 0}명 참여 / {carpool.seats_available > 0 ? `${carpool.seats_available}석 가능` : '마감'}</p>
-          <p className="text-sm flex items-center"><FiDollarSign className="mr-2 text-blue-500" />1인당 비용: {carpool.price_per_seat ? `${carpool.price_per_seat}원` : '정보 없음'}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-lg font-semibold mb-2">설명</h2>
-          <p className="text-sm text-gray-700 whitespace-pre-line">{carpool.description || "설명이 없습니다."}</p>
-        </div>
-
-        {carpool.rules && carpool.rules.length > 0 && (
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-lg font-semibold mb-2">탑승 규칙</h2>
-            <ul className="list-disc pl-5 text-sm text-gray-600">
-              {carpool.rules.map((rule, idx) => (
-                <li key={idx}>{rule}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {carpool.comments && carpool.comments.length > 0 && (
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-lg font-semibold mb-2">댓글</h2>
-            <ul className="space-y-2">
-              {carpool.comments.map((comment) => (
-                <li key={comment.id} className="border-b pb-2">
-                  <p className="text-sm text-gray-600">{comment.content}</p>
-                  <p className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleString('ko-KR')}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
+          ) : (
+            <p className="p-6 text-center text-gray-500">
+              {searchTerm ? '검색된 추천 코스가 없습니다.' : '추천 코스가 없습니다.'}
+            </p>
+          )
         )}
       </div>
-    </>
+    </div>
   );
 }
 
-export default CarpoolDetailPage;
+export default CourseRecommendPage;
