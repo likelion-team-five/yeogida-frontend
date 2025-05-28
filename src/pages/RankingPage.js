@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import PageSectionHeader from "../components/common/PageSectionHeader";
 import ListItemCard from "../components/common/ListItemCard";
-import { FiAward, FiTrendingUp, FiUserCheck, FiCalendar } from "react-icons/fi";
-import axiosInstance from "../auth/axiosinstance";
+import { FiAward, FiTrendingUp, FiUserCheck } from "react-icons/fi";
+import bb from "../pages/images/bb.jpg";
+import hh from "../pages/images/hh.jpg";
+import dd from "../pages/images/dd.jpg";
+import pp from '../pages/images/pp.png';
 
 const tabs = [
   { id: "courses", label: "인기 코스", icon: FiTrendingUp },
@@ -36,39 +39,92 @@ function RankingPage() {
   const [activeTab, setActiveTab] = useState("courses");
   const [sortPeriod, setSortPeriod] = useState("weekly");
   const [data, setData] = useState({ courses: [], reviews: [], users: [] });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // API 호출 함수에 콘솔 로그 추가
-  const fetchRankingData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axiosInstance.get(`/api/v1/rankings?period=${sortPeriod}`);
-      console.log("응답 상태 코드:", res.status); 
-      console.log("랭킹 API 응답 데이터:", res.data); // <== 여기서 콘솔 출력
-      setData({
-        courses: res.data.courses || [],
-        reviews: res.data.reviews || [],
-        users: res.data.users || [],
-      });
-    } catch (e) {
-      console.error("랭킹 API 호출 에러:", e);
-      setError("랭킹 데이터를 불러오는데 실패했습니다.");
-      setData({ courses: [], reviews: [], users: [] });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchRankingData();
+    // 더미 데이터
+    setData({
+      courses: [
+        {
+          id: "1",
+          rank: 1,
+          thumbnailUrl: bb,
+          title: "서울 한옥 힐링 투어",
+          score: "4.9",
+        },
+        {
+          id: "2",
+          rank: 2,
+          thumbnailUrl: hh,
+          title: "강원도 감성 드라이브",
+          score: "4.7",
+        },
+        {
+          id: "3",
+          rank: 3,
+          thumbnailUrl: dd,
+          title: "부산 맛집 탐방",
+          score: "4.6",
+        },
+      ],
+      reviews: [
+        {
+          id: "101",
+          rank: 1,
+          thumbnailUrl: hh,
+          title: "한옥 마을 너무 좋아요!",
+          author: "여행자1",
+          score: "👍 58",
+        },
+        {
+          id: "102",
+          rank: 2,
+          thumbnailUrl: dd,
+          title: "부산 먹방 여행 성공!",
+          author: "푸드헌터",
+          score: "👍 49",
+        },
+        {
+          id: "103",
+          rank: 3,
+          thumbnailUrl: bb,
+          title: "힐링 제대로 했습니다",
+          author: "초보엄마",
+          score: "👍 41",
+        },
+      ],
+      users: [
+        {
+          nickname: "여행천재",
+          rank: 1,
+          profile_Image: pp,
+          level: 5,
+          reviewCount: 28,
+          likeCount: 154,
+          badge: "여행의 신",
+        },
+        {
+          nickname: "감성작가",
+          rank: 2,
+          profile_Image: pp,
+          level: 4,
+          reviewCount: 19,
+          likeCount: 92,
+          badge: "감성왕",
+        },
+        {
+          nickname: "초보엄마",
+          rank: 3,
+          profile_Image: pp,
+          level: 3,
+          reviewCount: 12,
+          likeCount: 45,
+          badge: "가족여행러",
+        },
+      ],
+    });
   }, [sortPeriod]);
 
   const renderRankingList = () => {
-    if (loading) return <p className="p-4 text-center">로딩 중...</p>;
-    if (error) return <p className="p-4 text-center text-red-500">{error}</p>;
-
     let list = [];
     switch (activeTab) {
       case "courses":
@@ -79,7 +135,7 @@ function RankingPage() {
             rank={item.rank}
             imageUrl={item.thumbnailUrl}
             title={item.title}
-            score={item.score}
+            score={`${item.score}점`}
             onClick={() => alert(`${item.title} 상세 보기`)}
           />
         ));
@@ -119,7 +175,6 @@ function RankingPage() {
     <>
       <PageSectionHeader title="랭킹" />
 
-      {/* 탭 네비게이션 */}
       <div className="px-4 border-b border-gray-200 bg-white">
         <nav className="flex space-x-1 -mb-px">
           {tabs.map((tab) => (
@@ -140,7 +195,6 @@ function RankingPage() {
         </nav>
       </div>
 
-      {/* 기간 정렬 옵션 */}
       <div className="p-3 flex justify-end items-center bg-gray-50 border-b border-gray-200">
         {periodOptions.map((opt) => (
           <button
@@ -158,7 +212,6 @@ function RankingPage() {
         ))}
       </div>
 
-      {/* 랭킹 목록 */}
       <div className="divide-y divide-gray-100">{renderRankingList()}</div>
     </>
   );

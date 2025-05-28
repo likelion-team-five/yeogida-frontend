@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import PageSectionHeader from "../components/common/PageSectionHeader";
 import ListItemCard from "../components/common/ListItemCard";
-import { FiHeart, FiMap, FiMessageSquare, FiThumbsDown } from "react-icons/fi"; 
-import axiosInstance from "../auth/axiosinstance";
+import { FiHeart, FiMap, FiMessageSquare, FiThumbsDown } from "react-icons/fi";
+import bb from "../pages/images/bb.jpg";
+import hh from "../pages/images/hh.jpg";
+import dd from "../pages/images/dd.jpg";
+import qq from "../pages/images/qq.jpg";
 
 function MyFavoritesPage() {
   const [activeTab, setActiveTab] = useState("courses");
@@ -16,73 +19,48 @@ function MyFavoritesPage() {
     { id: "carpools", label: "찜한 카풀", icon: FiHeart },
   ];
 
-  // ✅ 찜 목록 API 호출
-  const fetchFavorites = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axiosInstance.get("/api/v1/courses/favorites/");
-
-      // ✅ 콘솔 로그 추가
-      console.log("[찜 목록 API] 응답 상태 코드:", res.status);
-      console.log("[찜 목록 API] 응답 데이터:", res.data);
-
-      setFavorites({
-        courses: res.data.courses || [],
-        reviews: res.data.reviews || [],
-        carpools: res.data.carpools || [],
-      });
-    } catch (err) {
-      console.error("찜 목록 불러오기 실패:", err);
-      setError("찜 목록을 불러오는데 실패했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchFavorites();
+
+    const dummyFavorites = {
+      courses: [
+        {
+          id: "1",
+          title: "서울 한옥 힐링 투어",
+          thumbnailUrl: bb,
+          dateFavorited: "2025-05-01",
+          summary: "전통과 힐링이 어우러진 한옥 여행",
+        },
+      ],
+      reviews: [
+        {
+          id: "2",
+          title: "부산 맛집 최고였어요!",
+          thumbnailUrl: qq,
+          author: "맛집헌터",
+          createdAt: "2025-05-03",
+          summary: "광안리에서 먹은 해산물이 아직도 생각나요.",
+        },
+      ],
+      carpools: [
+        {
+          id: "3",
+          title: "서울 → 강릉 5/10(금) 08:00 출발",
+          thumbnailUrl: hh,
+          createdAt: "2025-05-05",
+          summary: "편하게 갈 수 있어 좋아요! (3자리 남음)",
+        },
+      ],
+    };
+
+    setFavorites(dummyFavorites);
   }, []);
 
-  const handleUnfavorite = async (itemId, itemType) => {
-    if (!window.confirm("이 항목을 찜 목록에서 삭제하시겠습니까?")) return;
-
-    try {
-      if (itemType === "courses") {
-        await axiosInstance.delete(`/api/v1/courses/${itemId}/favorite`);
-      } else if (itemType === "reviews") {
-        await axiosInstance.delete(`/api/v1/reviews/${itemId}/likes`);
-      } else if (itemType === "carpools") {
-        await axiosInstance.delete(`/api/v1/carpools/${itemId}/likes`);
-      }
-
-      setFavorites((prev) => ({
-        ...prev,
-        [itemType]: prev[itemType].filter((item) => item.id !== itemId),
-      }));
-
-      alert("찜 해제가 완료되었습니다.");
-    } catch (error) {
-      console.error("찜 해제 실패:", error);
-      alert("찜 해제 중 오류가 발생했습니다.");
-    }
+  const handleUnfavorite = (itemId, itemType) => {
+    alert(`찜 해제: ${itemType} - ${itemId}`);
   };
 
-  const handleFavorite = async (itemId, itemType) => {
-    try {
-      if (itemType === "courses") {
-        await axiosInstance.post(`/api/v1/courses/${itemId}/favorite`);
-      } else if (itemType === "reviews") {
-        await axiosInstance.post(`/api/v1/reviews/${itemId}/likes`);
-      } else if (itemType === "carpools") {
-        await axiosInstance.post(`/api/v1/carpools/${itemId}/likes`);
-      }
-      alert("찜이 추가되었습니다.");
-      fetchFavorites();
-    } catch (error) {
-      console.error("찜 추가 실패:", error);
-      alert("찜 추가 중 오류가 발생했습니다.");
-    }
+  const handleFavorite = (itemId, itemType) => {
+    alert(`찜 추가: ${itemType} - ${itemId}`);
   };
 
   const renderFavoriteList = () => {
