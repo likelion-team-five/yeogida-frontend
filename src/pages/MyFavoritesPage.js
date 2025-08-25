@@ -4,7 +4,6 @@ import ListItemCard from "../components/common/ListItemCard";
 import { FiHeart, FiMap, FiMessageSquare, FiThumbsDown } from "react-icons/fi";
 import bb from "../pages/images/bb.jpg";
 import hh from "../pages/images/hh.jpg";
-import dd from "../pages/images/dd.jpg";
 import qq from "../pages/images/qq.jpg";
 
 function MyFavoritesPage() {

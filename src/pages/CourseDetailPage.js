@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageSectionHeader from '../components/common/PageSectionHeader';
-import { FiMapPin, FiClock, FiDollarSign, FiChevronLeft, FiChevronRight, FiNavigation, FiUsers } from 'react-icons/fi';
+import { FiMapPin, FiClock, FiChevronLeft, FiChevronRight, FiUsers } from 'react-icons/fi';
 import axiosInstance from "../auth/axiosinstance"
 
 function CarpoolDetailPage() {

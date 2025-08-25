@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageSectionHeader from '../components/common/PageSectionHeader';
 import SearchBarWithButton from '../components/common/SearchBarWithButton';
@@ -25,7 +25,7 @@ function ReviewListPage() {
   const [showFilters, setShowFilters] = useState(false);
   const filterRef = useRef(null);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -44,11 +44,11 @@ function ReviewListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortOrder]);
 
   useEffect(() => {
     fetchReviews();
-  }, [sortOrder, fetchReviews]);
+  }, [fetchReviews]);
 
   useEffect(() => {
     if (!loading && reviews.length === 0 && !error) {

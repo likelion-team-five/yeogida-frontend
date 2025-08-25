@@ -1,10 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import logo from '../../pages/images/logo1.svg';
 
 const LoginPage = () => {
   const handleKakaoLogin = () => {
-    const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_API_KEY;
-
     window.location.href = 'https://meaningful-barbette-moda-backend-69ee5792.koyeb.app/api/v1/auth/login/kakao/';
   };
 
