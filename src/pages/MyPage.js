@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import PageSectionHeader from "../components/common/PageSectionHeader";
 import ListItemCard from "../components/common/ListItemCard";
 import {
-  FiUser,
   FiEdit3,
   FiLogOut,
   FiHeart,

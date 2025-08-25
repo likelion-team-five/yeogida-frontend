@@ -10,8 +10,6 @@ import qq from "../pages/images/qq.jpg";
 function MyFavoritesPage() {
   const [activeTab, setActiveTab] = useState("courses");
   const [favorites, setFavorites] = useState({ courses: [], reviews: [], carpools: [] });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   const tabs = [
     { id: "courses", label: "찜한 코스", icon: FiMap },
@@ -64,13 +62,6 @@ function MyFavoritesPage() {
   };
 
   const renderFavoriteList = () => {
-    if (loading) {
-      return <p className="p-4 text-center text-gray-500">로딩 중...</p>;
-    }
-    if (error) {
-      return <p className="p-4 text-center text-red-500">{error}</p>;
-    }
-
     const currentItems = favorites[activeTab] || [];
     if (currentItems.length === 0) {
       return (

@@ -9,8 +9,6 @@ import axiosInstance from '../auth/axiosinstance';
 import ss from '../pages/images/ss.jpg';
 import gg from '../pages/images/gg.jpg';
 
-const parseDateISO = (isoString) => new Date(isoString);
-
 const sortOptionsConfig = [
   { key: 'latest', label: '최신순' },
   { key: 'likes', label: '좋아요순' },
@@ -50,7 +48,7 @@ function ReviewListPage() {
 
   useEffect(() => {
     fetchReviews();
-  }, [sortOrder]);
+  }, [sortOrder, fetchReviews]);
 
   useEffect(() => {
     if (!loading && reviews.length === 0 && !error) {

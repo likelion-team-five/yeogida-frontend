@@ -4,7 +4,7 @@ import PageSectionHeader from "../components/common/PageSectionHeader"; // 경�
 import CommentInput from "../components/review/CommentInput"; // 경로 확인
 import { FaUserCircle } from "react-icons/fa";
 import { AiOutlineHeart, AiFillHeart, AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
-import { BsCardImage, BsArrowReturnRight } from "react-icons/bs";
+import { BsArrowReturnRight } from "react-icons/bs";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import axiosInstance from "../auth/axiosinstance"; // axios 인스턴스
 
@@ -56,17 +56,6 @@ const deleteReview = async (reviewId) => {
     return response.data; // 삭제된 후기 반환
   } catch (error) {
     console.error("후기 삭제 오류:", error);
-    throw error;
-  }
-};
-
-// 댓글 삭제 API
-const deleteComment = async (reviewId, commentId) => {
-  try {
-    const response = await axiosInstance.delete(`/api/v1/reviews/${reviewId}/comments/${commentId}`);
-    return response.data; // 삭제된 댓글 반환
-  } catch (error) {
-    console.error("댓글 삭제 오류:", error);
     throw error;
   }
 };

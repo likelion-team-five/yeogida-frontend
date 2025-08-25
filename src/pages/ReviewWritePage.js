@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import PageSectionHeader from "../components/common/PageSectionHeader";
-import { FiUploadCloud, FiTag, FiSave, FiXCircle } from "react-icons/fi";
+import { FiUploadCloud, FiXCircle } from "react-icons/fi";
 import axiosInstance from "../auth/axiosinstance";
 
 const fetchExistingReviewDataForEdit = async (reviewIdToEdit) => {
@@ -124,7 +124,7 @@ function ReviewWritePage({ reviewIdToEdit, onNavigate }) {
     }
 
     try {
-      const response = await axiosInstance.post("/api/v1/reviews", formDataToSubmit, {
+      await axiosInstance.post("/api/v1/reviews", formDataToSubmit, {
         headers: {
           "Content-Type": "multipart/form-data",
           "X-CSRFToken": csrfToken,
